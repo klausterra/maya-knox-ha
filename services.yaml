@@ -1,0 +1,9 @@
+test_campainha:
+  name: Testar Campainha
+  description: Simula o acionamento da campainha para testar notificações e o chime físico.
+  fields: {}
+
+test_alarme:
+  name: Testar Alarme
+  description: Simula um disparo do alarme para testar notificações e a sirene física.
+  fields: {}
