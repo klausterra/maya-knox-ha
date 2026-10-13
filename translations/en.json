@@ -1,6 +1,16 @@
 {
     "config": {
         "step": {
+            "init": {
+                "title": "Maya Knox Configuration Panel",
+                "description": "Pick a section to edit. Changes apply immediately.",
+                "menu_options": {
+                    "zonas": "Zones — sensors and siren",
+                    "campainha": "Doorbell — who to notify",
+                    "notificacoes": "Alarm notifications",
+                    "automacao": "Automation — presence and Away mode"
+                }
+            },
             "zonas": {
                 "title": "Maya Knox — Zones",
                 "description": "Sensors that trigger the alarm and the physical siren.",
@@ -77,7 +87,13 @@
         "step": {
             "init": {
                 "title": "Maya Knox Configuration Panel",
-                "description": "Pick a section to edit. Changes apply immediately."
+                "description": "Pick a section to edit. Changes apply immediately.",
+                "menu_options": {
+                    "zonas": "Zones — sensors and siren",
+                    "campainha": "Doorbell — who to notify",
+                    "notificacoes": "Alarm notifications",
+                    "automacao": "Automation — presence and Away mode"
+                }
             },
             "zonas": {
                 "title": "Zones",

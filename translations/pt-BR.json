@@ -1,6 +1,16 @@
 {
     "config": {
         "step": {
+            "init": {
+                "title": "Painel de Configuração Maya Knox",
+                "description": "Escolha uma seção para editar. As mudanças são aplicadas na hora.",
+                "menu_options": {
+                    "zonas": "Zonas — sensores e sirene",
+                    "campainha": "Campainha — quem avisar",
+                    "notificacoes": "Notificações do alarme",
+                    "automacao": "Automação — presença e Modo Ausente"
+                }
+            },
             "zonas": {
                 "title": "Maya Knox — Zonas",
                 "description": "Sensores que disparam o alarme e a sirene física.",
@@ -77,7 +87,13 @@
         "step": {
             "init": {
                 "title": "Painel de Configuração Maya Knox",
-                "description": "Escolha uma seção para editar. As mudanças são aplicadas na hora."
+                "description": "Escolha uma seção para editar. As mudanças são aplicadas na hora.",
+                "menu_options": {
+                    "zonas": "Zonas — sensores e sirene",
+                    "campainha": "Campainha — quem avisar",
+                    "notificacoes": "Notificações do alarme",
+                    "automacao": "Automação — presença e Modo Ausente"
+                }
             },
             "zonas": {
                 "title": "Zonas",

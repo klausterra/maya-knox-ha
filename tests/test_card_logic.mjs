@@ -30,7 +30,7 @@ function eq(rotulo, obtido, esperado) {
 }
 
 // versão única e cache-bust coerente
-eq("VERSION", VERSION, "1.3.0");
+eq("VERSION", VERSION, "1.3.1");
 
 // escape: friendly_name / log vêm de fora, não podem virar HTML
 eq("esc <", esc("<img onerror=1>"), "&lt;img onerror=1&gt;");

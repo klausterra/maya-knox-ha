@@ -1,4 +1,4 @@
-const VERSION = "1.3.0";
+const VERSION = "1.3.1";
 
 console.info(
   `%c MAYA KNOX PORTAL %c ${VERSION} `,
