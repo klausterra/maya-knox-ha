@@ -130,7 +130,7 @@ class MayaKnoxCard extends HTMLElement {
   setConfig(config) { this.config = config; }
   static getStubConfig() { return { entity: "alarm_control_panel.maya_knox_portal", name: "Central Maya Knox" } }
 }
-customElements.define("maya-knox-card", MayaKnoxCard);
+if (!customElements.get("maya-knox-card")) customElements.define("maya-knox-card", MayaKnoxCard);
 
 window.customCards = window.customCards || [];
 window.customCards.push({

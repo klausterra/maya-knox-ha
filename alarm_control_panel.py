@@ -12,10 +12,20 @@ async def async_setup_entry(hass, config_entry, async_add_entities):
     async_add_entities([MayaKnoxAlarm("Maya Knox Portal", config_data)])
 
 from homeassistant.helpers import entity_registry as er
+from homeassistant.helpers.restore_state import RestoreEntity
 from homeassistant.exceptions import HomeAssistantError
 from homeassistant.util import dt as dt_util
 
-class MayaKnoxAlarm(AlarmControlPanelEntity):
+from .presence import camera_do_sensor
+
+ESTADOS_RESTAURAVEIS = {s.value for s in (
+    AlarmControlPanelState.DISARMED,
+    AlarmControlPanelState.ARMED_HOME,
+    AlarmControlPanelState.ARMED_AWAY,
+    AlarmControlPanelState.TRIGGERED,
+)}
+
+class MayaKnoxAlarm(AlarmControlPanelEntity, RestoreEntity):
     def __init__(self, name, config_data):
         super().__init__()
         self._attr_name = name
@@ -27,6 +37,8 @@ class MayaKnoxAlarm(AlarmControlPanelEntity):
         self._attr_code_arm_required = False
         self._attr_supported_features = AlarmControlPanelEntityFeature.ARM_HOME | AlarmControlPanelEntityFeature.ARM_AWAY | AlarmControlPanelEntityFeature.TRIGGER
         self._sensor_disparo = None
+        self._camera_disparo = None
+        self._auto_armado = False
         self._logs = []
         self._log_file = None
         # O _log_file serÃ¡ definido no async_added_to_hass quando tivermos acesso ao caminho da config
@@ -36,6 +48,24 @@ class MayaKnoxAlarm(AlarmControlPanelEntity):
         await super().async_added_to_hass()
         self._log_file = self.hass.config.path("maya_knox_logs.json")
         self._logs = await self.hass.async_add_executor_job(self._load_logs)
+
+        ultimo = await self.async_get_last_state()
+        if ultimo and ultimo.state in ESTADOS_RESTAURAVEIS:
+            self._attr_state = AlarmControlPanelState(ultimo.state)
+            self._auto_armado = bool(ultimo.attributes.get("auto_armado", False))
+            self._sensor_disparo = ultimo.attributes.get("sensor_disparo")
+            _LOGGER.info(f"Maya Knox: Estado restaurado após reinício: {ultimo.state}")
+
+        self.hass.data.setdefault(DOMAIN, {})["painel"] = self
+
+    async def async_will_remove_from_hass(self):
+        if self.hass.data.get(DOMAIN, {}).get("painel") is self:
+            self.hass.data[DOMAIN].pop("painel")
+        await super().async_will_remove_from_hass()
+
+    @property
+    def auto_armado(self) -> bool:
+        return self._auto_armado
 
     def _load_logs(self):
         """Carregar logs do disco."""
@@ -70,6 +100,7 @@ class MayaKnoxAlarm(AlarmControlPanelEntity):
         sensores = self._config_data.get("sensores_perimetro", []) + self._config_data.get("sensores_internos", [])
         return {
             "sensor_disparo": self._sensor_disparo,
+            "auto_armado": self._auto_armado,
             "sensors": sensores,
             "recent_logs": self._logs[-10:] # Keep last 10
         }
@@ -93,6 +124,8 @@ class MayaKnoxAlarm(AlarmControlPanelEntity):
         s_state = self.hass.states.get(s_id)
         nome_zona = s_state.attributes.get("friendly_name", s_id) if s_state else s_id
         self._sensor_disparo = nome_zona
+        cam = camera_do_sensor(s_id) if isinstance(s_id, str) else None
+        self._camera_disparo = cam if cam and self.hass.states.get(cam) else None
         
         self._add_log("DISPARO", nome_zona)
         await self._controlar_sirene(True)
@@ -104,27 +137,44 @@ class MayaKnoxAlarm(AlarmControlPanelEntity):
         if ent: await self.hass.services.async_call("homeassistant", "turn_on" if ligar else "turn_off", {"entity_id": ent})
 
     async def async_alarm_disarm(self, code=None):
+        await self._desarmar("Usuário", "O alarme foi desativado.")
+
+    async def async_desarmar_automatico(self):
+        await self._desarmar("Morador chegou", "Morador chegou em casa. Alarme desativado automaticamente.")
+
+    async def _desarmar(self, origem, msg):
         self._attr_state = AlarmControlPanelState.DISARMED
+        self._auto_armado = False
         self._sensor_disparo = None
-        self._add_log("Desarmado", "Usuário")
+        self._camera_disparo = None
+        self._add_log("Desarmado", origem)
         await self._controlar_sirene(False)
         await self._toggle_internal_cameras(False)
         self.async_write_ha_state()
-        await self._enviar_notificacao("🛡️ Sistema Desarmado", "O alarme foi desativado.")
+        await self._enviar_notificacao("🛡️ Sistema Desarmado", msg)
 
     async def async_alarm_arm_home(self, code=None): 
         self._attr_state = AlarmControlPanelState.ARMED_HOME
+        self._auto_armado = False
         self._add_log("Armado (Casa)")
         await self._toggle_internal_cameras(False)
         self.async_write_ha_state()
         await self._enviar_notificacao("🏠 Armado (Casa)", "O alarme perimetral foi ativado.")
 
     async def async_alarm_arm_away(self, code=None): 
+        await self._armar_rua(automatico=False)
+
+    async def async_armar_automatico(self):
+        await self._armar_rua(automatico=True)
+
+    async def _armar_rua(self, automatico):
         self._attr_state = AlarmControlPanelState.ARMED_AWAY
-        self._add_log("Armado (Rua)")
+        self._auto_armado = automatico
+        self._add_log("Armado (Rua)", "Automático: todos saíram" if automatico else "")
         await self._toggle_internal_cameras(True)
         self.async_write_ha_state()
-        await self._enviar_notificacao("🔒 Armado (Rua)", "Todos os sensores foram ativados.")
+        msg = "Ninguém em casa. Sensores e detecção de pessoas ativados." if automatico else "Todos os sensores foram ativados."
+        await self._enviar_notificacao("🔒 Armado (Rua)", msg)
 
     async def _enviar_notificacao(self, titulo, msg, disparo=False):
         dados = {"title": titulo, "message": msg, "data": {}}
@@ -141,7 +191,7 @@ class MayaKnoxAlarm(AlarmControlPanelEntity):
                 "priority": "high",
                 "color": "red"
             })
-            cam = next((s for s in self._config_data.get("sensores_perimetro", []) if s.startswith("camera.")), None)
+            cam = self._camera_disparo or next((s for s in self._config_data.get("sensores_perimetro", []) if s.startswith("camera.")), None)
             if cam: 
                 dados["data"]["image"] = f"/api/camera_proxy/{cam}"
                 dados["data"]["entity_id"] = cam
@@ -201,15 +251,22 @@ class MayaKnoxAlarm(AlarmControlPanelEntity):
                 _LOGGER.error(f"Maya Knox: Erro ao enviar para Alexa {alexa_service}: {e}")
 
     async def _toggle_internal_cameras(self, enable: bool):
-        """Ativa ou desativa o detect das câmeras internas."""
+        """Liga/desliga detecção das câmeras internas e os switches de detect do Frigate (Modo Ausente)."""
         cameras = [s for s in self._config_data.get("sensores_internos", []) if s.startswith("camera.")]
-        if not cameras:
-            return
-        
-        service = "enable_motion_detection" if enable else "disable_motion_detection"
-        _LOGGER.info(f"Maya Knox: {'Ativando' if enable else 'Desativando'} detecção em câmeras internas: {cameras}")
-        
-        try:
-            await self.hass.services.async_call("camera", service, {"entity_id": cameras})
-        except Exception as e:
-            _LOGGER.error(f"Maya Knox: Erro ao alterar detecção das câmeras: {e}")
+        if cameras:
+            service = "enable_motion_detection" if enable else "disable_motion_detection"
+            _LOGGER.info(f"Maya Knox: {'Ativando' if enable else 'Desativando'} detecção em câmeras internas: {cameras}")
+            try:
+                await self.hass.services.async_call("camera", service, {"entity_id": cameras})
+            except Exception as e:
+                _LOGGER.error(f"Maya Knox: Erro ao alterar detecção das câmeras: {e}")
+
+        detect_switches = self._config_data.get("frigate_detect_ausente", [])
+        if detect_switches:
+            _LOGGER.info(f"Maya Knox: {'Ligando' if enable else 'Desligando'} detecção Frigate: {detect_switches}")
+            try:
+                await self.hass.services.async_call(
+                    "switch", "turn_on" if enable else "turn_off", {"entity_id": detect_switches}, blocking=True
+                )
+            except Exception as e:
+                _LOGGER.error(f"Maya Knox: Erro ao alterar detecção Frigate: {e}")

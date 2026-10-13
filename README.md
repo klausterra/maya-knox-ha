@@ -40,6 +40,15 @@
     *   **Automação Alexa**: Defina as frases e dispositivos para anúncios automáticos.
     *   **Armar Automático**: Sistema inteligente baseado na presença dos moradores (GPS).
 
+## 🚪 Saída de casa e Modo Ausente (v1.2.0)
+
+*   **Armar ao sair**: quando todos os moradores (`person`) e rastreadores Omada estão fora, o Knox espera o tempo configurado (padrão **2 min**) e arma em **Rua**. Se alguém voltar antes, cancela.
+*   **Sem falso armamento**: rastreador `unknown`/`unavailable` (boot do HA, app sem sinal) não conta como "fora".
+*   **Desarmar ao chegar**: só desarma sozinho se o armamento foi automático. Armado à mão continua armado.
+*   **Modo Ausente (Frigate)**: em **Rua**, liga os switches de detecção escolhidos (ex.: `switch.garagem_detect`, `switch.living_detect`); ao desarmar ou armar em **Casa**, desliga.
+*   **Disparo por pessoa**: sensores como `binary_sensor.garagem_person_occupancy` disparam o alarme só em **Rua**; a notificação usa o snapshot da câmera correspondente.
+*   **Estado preservado**: o modo do alarme é restaurado após reiniciar o Home Assistant.
+
 ## 🖥️ Cartão Frontend (Lovelace)
 
 O cartão é instalado automaticamente como um recurso. Se precisar adicionar manualmente:

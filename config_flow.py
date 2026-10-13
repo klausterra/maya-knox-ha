@@ -1,4 +1,4 @@
-﻿import voluptuous as vol
+import voluptuous as vol
 from homeassistant.config_entries import ConfigEntry, ConfigFlow, OptionsFlow
 from homeassistant.core import callback
 from homeassistant.helpers import selector
@@ -18,7 +18,7 @@ class MayaKnoxOptionsFlowHandler(OptionsFlow):
                 "entidade_sirene_alarme", "entidade_chime_campainha", "moradores", 
                 "notify_servicos_campainha", "notify_servicos_sirene", 
                 "alexa_notify_servicos_campainha", "alexa_notify_servicos_alarme",
-                "rastreadores_omada", "alexa_campainha_som_dispositivos"
+                "rastreadores_omada", "alexa_campainha_som_dispositivos", "frigate_detect_ausente", "sensores_pessoa_ausente"
             ]
             for key in list_keys:
                 if key in user_input:
@@ -61,7 +61,10 @@ class MayaKnoxOptionsFlowHandler(OptionsFlow):
             vol.Optional("alexa_msg_alarme", default=defaults.get("alexa_msg_alarme", "Atenção, o alarme foi disparado! {msg}")): str,
             vol.Optional("alexa_campainha_som_id", default=defaults.get("alexa_campainha_som_id", "amzn_sfx_doorbell_01")): str,
             vol.Optional("alexa_campainha_som_dispositivos", default=_ensure_list(defaults.get("alexa_campainha_som_dispositivos", []))): selector.EntitySelector(selector.EntitySelectorConfig(multiple=True, domain="notify", integration="alexa_devices")),
-            vol.Optional("ativar_auto_armar", default=defaults.get("ativar_auto_armar", True)): selector.BooleanSelector()
+            vol.Optional("ativar_auto_armar", default=defaults.get("ativar_auto_armar", True)): selector.BooleanSelector(),
+            vol.Optional("atraso_auto_armar", default=defaults.get("atraso_auto_armar", 2)): selector.NumberSelector(selector.NumberSelectorConfig(min=0, max=60, step=1, unit_of_measurement="min", mode=selector.NumberSelectorMode.BOX)),
+            vol.Optional("frigate_detect_ausente", default=_ensure_list(defaults.get("frigate_detect_ausente", []))): selector.EntitySelector(selector.EntitySelectorConfig(multiple=True, domain="switch")),
+            vol.Optional("sensores_pessoa_ausente", default=_ensure_list(defaults.get("sensores_pessoa_ausente", []))): selector.EntitySelector(selector.EntitySelectorConfig(multiple=True, domain="binary_sensor")),
         })
 
 class MayaKnoxConfigFlow(ConfigFlow, domain=DOMAIN):
@@ -74,7 +77,7 @@ class MayaKnoxConfigFlow(ConfigFlow, domain=DOMAIN):
         if self._async_current_entries(): return self.async_abort(reason="single_instance_allowed")
         if user_input is not None:
             # Garantir que campos múltiplos sejam listas antes de salvar
-            list_keys = ["sensores_perimetro", "sensores_internos", "sensor_campainha", "entidade_sirene_alarme", "entidade_chime_campainha", "moradores", "notify_servicos_campainha", "notify_servicos_sirene", "alexa_notify_servicos_campainha", "alexa_notify_servicos_alarme", "rastreadores_omada", "alexa_campainha_som_dispositivos"]
+            list_keys = ["sensores_perimetro", "sensores_internos", "sensor_campainha", "entidade_sirene_alarme", "entidade_chime_campainha", "moradores", "notify_servicos_campainha", "notify_servicos_sirene", "alexa_notify_servicos_campainha", "alexa_notify_servicos_alarme", "rastreadores_omada", "alexa_campainha_som_dispositivos", "frigate_detect_ausente", "sensores_pessoa_ausente"]
             for key in list_keys:
                 if key in user_input:
                     user_input[key] = cv.ensure_list(user_input[key])

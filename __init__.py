@@ -3,15 +3,24 @@ import logging
 import os
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, Event
-from homeassistant.helpers.event import async_track_state_change_event
-from homeassistant.const import STATE_HOME, STATE_ON, Platform
+from homeassistant.helpers.event import async_track_state_change_event, async_call_later
+from homeassistant.helpers.start import async_at_started
+from homeassistant.const import STATE_ON, Platform
 from homeassistant.components.frontend import add_extra_js_url
 from homeassistant.components.http import StaticPathConfig
 from homeassistant.components.alarm_control_panel import AlarmControlPanelState
 from homeassistant.helpers import entity_registry as er
 from homeassistant.exceptions import HomeAssistantError
 
+from .presence import (
+    ALGUEM_EM_CASA,
+    TODOS_FORA,
+    avaliar_presenca,
+    transicao_valida_para_disparo,
+)
+
 DOMAIN = 'maya_knox'
+SERVICOS = ("test_campainha", "test_alarme")
 PLATFORMS = [Platform.ALARM_CONTROL_PANEL, Platform.BUTTON]
 
 _LOGGER = logging.getLogger(__name__)
@@ -26,40 +35,54 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     config_data = {**entry.data, **entry.options}
     hass.data.setdefault(DOMAIN, {})
 
-    # --- REGISTRO FRONTEND (No topo para garantir carregamento) ---
-    try:
-        component_path = os.path.dirname(__file__)
-        www_path = os.path.join(component_path, 'www')
-        brand_path = os.path.join(component_path, 'brand')
-        _LOGGER.info(f'Maya Knox: Registrando caminhos estáticos em {www_path}')
+    # --- REGISTRO FRONTEND (uma vez por execução do HA; rotas não podem ser re-registradas) ---
+    if not hass.data[DOMAIN].get('static_registrado'):
+        try:
+            component_path = os.path.dirname(__file__)
+            www_path = os.path.join(component_path, 'www')
+            brand_path = os.path.join(component_path, 'brand')
+            _LOGGER.info(f'Maya Knox: Registrando caminhos estáticos em {www_path}')
 
-        await hass.http.async_register_static_paths(
-            [
-                StaticPathConfig(url_path='/maya_knox_www', path=www_path, cache_headers=False),
-                StaticPathConfig(url_path='/maya_knox_static', path=brand_path, cache_headers=False),
-            ]
-        )
-    except Exception as e:
-        _LOGGER.error(f'Maya Knox: Erro ao registrar recursos frontend: {e}')
+            await hass.http.async_register_static_paths(
+                [
+                    StaticPathConfig(url_path='/maya_knox_www', path=www_path, cache_headers=False),
+                    StaticPathConfig(url_path='/maya_knox_static', path=brand_path, cache_headers=False),
+                ]
+            )
+            add_extra_js_url(hass, '/maya_knox_www/maya-knox-card.js')
+            hass.data[DOMAIN]['static_registrado'] = True
+        except Exception as e:
+            _LOGGER.error(f'Maya Knox: Erro ao registrar recursos frontend: {e}')
+
+    def _alarm_entity_id():
+        registry = er.async_get(hass)
+        return registry.async_get_entity_id(Platform.ALARM_CONTROL_PANEL, DOMAIN, f'{DOMAIN}_main_panel')
+
+    sensores_perimetro = config_data.get('sensores_perimetro', [])
+    sensores_pessoa_ausente = config_data.get('sensores_pessoa_ausente', [])
 
     # Vigia de Intrusão (Gatilho e Relatório de Zona)
     async def _verificar_intrusao(event: Event):
-        registry = er.async_get(hass)
-        entity_id = registry.async_get_entity_id(Platform.ALARM_CONTROL_PANEL, DOMAIN, f'{DOMAIN}_main_panel')
+        entity_id = _alarm_entity_id()
         if not entity_id: return
 
         est_alarme = hass.states.get(entity_id)
         if not est_alarme or est_alarme.state not in [AlarmControlPanelState.ARMED_HOME, AlarmControlPanelState.ARMED_AWAY]:
             return
 
-        novo_state = event.data.get('new_state')
-        if novo_state and novo_state.state == STATE_ON:
-            sensor_id = event.data.get('entity_id')
-            if sensor_id in config_data.get('sensores_perimetro', []) or est_alarme.state == AlarmControlPanelState.ARMED_AWAY:
-                hass.data[DOMAIN]['ultimo_disparo'] = sensor_id
-                await hass.services.async_call('alarm_control_panel', 'alarm_trigger', {'entity_id': entity_id})
+        antigo = event.data.get('old_state')
+        novo = event.data.get('new_state')
+        if not transicao_valida_para_disparo(antigo.state if antigo else None, novo.state if novo else None):
+            return
 
-    sensores = config_data.get('sensores_perimetro', []) + config_data.get('sensores_internos', [])
+        sensor_id = event.data.get('entity_id')
+        if sensor_id in sensores_perimetro or est_alarme.state == AlarmControlPanelState.ARMED_AWAY:
+            hass.data[DOMAIN]['ultimo_disparo'] = sensor_id
+            await hass.services.async_call('alarm_control_panel', 'alarm_trigger', {'entity_id': entity_id})
+
+    sensores = list(dict.fromkeys(
+        sensores_perimetro + config_data.get('sensores_internos', []) + sensores_pessoa_ausente
+    ))
     if sensores:
         entry.async_on_unload(async_track_state_change_event(hass, sensores, _verificar_intrusao))
 
@@ -189,34 +212,6 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if sensores_campainha:
         entry.async_on_unload(async_track_state_change_event(hass, sensores_campainha, _tocar_campainha))
 
-    # Auto-Armar/Desarmar por GPS (Moradores)
-    if config_data.get('ativar_auto_armar'):
-        moradores = config_data.get('moradores', []) + config_data.get('rastreadores_omada', [])
-
-        async def _verificar_presenca(event: Event):
-            registry = er.async_get(hass)
-            entity_id = registry.async_get_entity_id(Platform.ALARM_CONTROL_PANEL, DOMAIN, f'{DOMAIN}_main_panel')
-            if not entity_id: return
-            est_alarme = hass.states.get(entity_id)
-            if not est_alarme: return
-
-            todos_fora = True
-            for m in moradores:
-                s = hass.states.get(m)
-                if s and s.state == STATE_HOME:
-                    todos_fora = False
-                    break
-
-            if todos_fora and est_alarme.state == AlarmControlPanelState.DISARMED:
-                _LOGGER.info('Maya Knox: Todos os moradores saíram. Armando automático.')
-                await hass.services.async_call('alarm_control_panel', 'alarm_arm_away', {'entity_id': entity_id})
-            elif not todos_fora and est_alarme.state == AlarmControlPanelState.ARMED_AWAY:
-                _LOGGER.info('Maya Knox: Morador chegou. Desarmando automático.')
-                await hass.services.async_call('alarm_control_panel', 'alarm_disarm', {'entity_id': entity_id})
-
-        if moradores:
-            entry.async_on_unload(async_track_state_change_event(hass, moradores, _verificar_presenca))
-
     # --- Serviços de Teste (Sempre disponíveis) ---
     async def test_campainha(call):
         _LOGGER.info("Maya Knox: Testando campainha...")
@@ -238,10 +233,74 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     entry.async_on_unload(entry.add_update_listener(async_reload_entry))
 
+    if config_data.get('ativar_auto_armar'):
+        _configurar_presenca(hass, entry, config_data)
+
     return True
 
+
+def _configurar_presenca(hass: HomeAssistant, entry: ConfigEntry, config_data: dict) -> None:
+    """Auto-armar (Rua) quando todos saem e desarmar na chegada se o armamento foi automático."""
+    rastreadores = list(dict.fromkeys(config_data.get('moradores', []) + config_data.get('rastreadores_omada', [])))
+    if not rastreadores:
+        return
+
+    atraso_s = max(0.0, float(config_data.get('atraso_auto_armar', 2))) * 60
+    pendente = {'cancelar': None}
+
+    def _cancelar_pendente():
+        if pendente['cancelar']:
+            pendente['cancelar']()
+            pendente['cancelar'] = None
+
+    def _situacao():
+        estados = []
+        for r in rastreadores:
+            s = hass.states.get(r)
+            estados.append(s.state if s else None)
+        return avaliar_presenca(estados)
+
+    async def _armar_se_continua_vazio(_agora=None):
+        pendente['cancelar'] = None
+        painel = hass.data[DOMAIN].get('painel')
+        if not painel or _situacao() != TODOS_FORA:
+            return
+        if painel.alarm_state == AlarmControlPanelState.DISARMED:
+            _LOGGER.info('Maya Knox: Todos fora há %.0f s. Armando (Rua) automático.', atraso_s)
+            await painel.async_armar_automatico()
+
+    async def _avaliar(_evento=None):
+        painel = hass.data[DOMAIN].get('painel')
+        if not painel:
+            return
+        situacao = _situacao()
+        if situacao == TODOS_FORA:
+            if painel.alarm_state == AlarmControlPanelState.DISARMED and not pendente['cancelar']:
+                if atraso_s == 0:
+                    await _armar_se_continua_vazio()
+                else:
+                    _LOGGER.info('Maya Knox: Todos saíram. Armando em %.0f s se ninguém voltar.', atraso_s)
+                    pendente['cancelar'] = async_call_later(hass, atraso_s, _armar_se_continua_vazio)
+        elif situacao == ALGUEM_EM_CASA:
+            _cancelar_pendente()
+            if painel.alarm_state == AlarmControlPanelState.ARMED_AWAY and painel.auto_armado:
+                _LOGGER.info('Maya Knox: Morador chegou. Desarmando (armamento foi automático).')
+                await painel.async_desarmar_automatico()
+
+    async def _ao_iniciar(_hass):
+        await _avaliar()
+
+    entry.async_on_unload(async_track_state_change_event(hass, rastreadores, _avaliar))
+    entry.async_on_unload(async_at_started(hass, _ao_iniciar))
+    entry.async_on_unload(_cancelar_pendente)
+
+
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
+    if ok:
+        for servico in SERVICOS:
+            hass.services.async_remove(DOMAIN, servico)
+    return ok
 
 async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
     await hass.config_entries.async_reload(entry.entry_id)

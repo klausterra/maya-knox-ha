@@ -1,12 +1,13 @@
 {
     "domain": "maya_knox",
     "name": "Maya Knox Security",
-    "version": "1.1.8",
+    "version": "1.2.0",
     "documentation": "https://www.hipermaya.com.br",
     "dependencies": [],
     "codeowners": [
-        "Klaus Quirino Terra"
+        "@klausterra"
     ],
     "config_flow": true,
-    "iot_class": "local_push"
+    "iot_class": "local_push",
+    "issue_tracker": "https://github.com/klausterra/maya-knox-ha/issues"
 }

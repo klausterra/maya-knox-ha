@@ -20,7 +20,10 @@
                     "alexa_msg_alarme": "Mensagem Alexa (Alarme)",
                     "alexa_campainha_som_id": "ID do Som Alexa (Campainha)",
                     "alexa_campainha_som_dispositivos": "Som de Campainha (Alexa Speak/Announce)",
-                    "ativar_auto_armar": "Armar sistema automaticamente ao sair?"
+                    "ativar_auto_armar": "Armar sistema automaticamente ao sair?",
+                    "atraso_auto_armar": "Esperar quantos minutos com todos fora antes de armar",
+                    "frigate_detect_ausente": "Modo Ausente: ligar detecção Frigate (ex: switch.garagem_detect, switch.living_detect)",
+                    "sensores_pessoa_ausente": "Modo Ausente: sensores de pessoa que disparam o alarme (ex: binary_sensor.garagem_person_occupancy)"
                 }
             }
         },
@@ -49,7 +52,10 @@
                     "alexa_msg_alarme": "Mensagem Alexa (Alarme)",
                     "alexa_campainha_som_id": "ID do Som Alexa (Campainha)",
                     "alexa_campainha_som_dispositivos": "Som de Campainha (Alexa Speak/Announce)",
-                    "ativar_auto_armar": "Armar sistema automaticamente ao sair?"
+                    "ativar_auto_armar": "Armar sistema automaticamente ao sair?",
+                    "atraso_auto_armar": "Esperar quantos minutos com todos fora antes de armar",
+                    "frigate_detect_ausente": "Modo Ausente: ligar detecção Frigate (ex: switch.garagem_detect, switch.living_detect)",
+                    "sensores_pessoa_ausente": "Modo Ausente: sensores de pessoa que disparam o alarme (ex: binary_sensor.garagem_person_occupancy)"
                 }
             }
         }
