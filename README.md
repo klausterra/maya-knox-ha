@@ -17,8 +17,9 @@
 ## 🧪 Testes
 
 ```bash
-python -m pytest tests -q      # regras de presença, normalização do options flow
-node tests/test_card_logic.mjs # lógica do card (escape de HTML, mapeamento de estados)
+python -m pytest tests -q          # regras de presença, normalização do options flow
+node tests/test_card_logic.mjs     # lógica do card (escape de HTML, mapeamento de estados)
+node tests/test_card_render.mjs    # card montado num DOM stub com dados reais do HA
 ```
 
 ## 📦 Instalação

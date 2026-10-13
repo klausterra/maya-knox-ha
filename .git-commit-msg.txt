@@ -1,0 +1,8 @@
+test: render do card com DOM stub e dados reais do HA
+
+Cobre 11 cenários no card montado: desarmado, entidade ausente, arming,
+disparo com zona, escape de friendly_name hostil, confirmação de desarme
+em dois toques, expiração da confirmação em 3s e chamadas de armar casa/rua.
+
+Também valida o caso que motivou a correção: camera.living em 'unavailable'
+deixa de aparecer com check verde.
