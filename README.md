@@ -19,14 +19,14 @@
 ### Via HACS (Recomendado)
 1. Vá para **HACS** > **Integrações**.
 2. Clique nos três pontos no canto superior direito e selecione **Repositórios Personalizados**.
-3. Adicione a URL: `https://github.com/klausterra/maya_knox`
+3. Adicione a URL: `https://github.com/klausterra/maya-knox-ha`
 4. Selecione a categoria **Integração**.
 5. Clique em **ADICIONAR**.
 6. Procure por **Maya Knox** e instale.
 7. Reinicie o Home Assistant.
 
 ### Manual
-1. Copie a pasta `maya_knox` para o diretório `custom_components` do seu Home Assistant.
+1. Copie o conteúdo deste repositório para `custom_components/maya_knox/` no seu Home Assistant.
 2. Reinicie o Home Assistant.
 
 ## ⚙️ Configuração
