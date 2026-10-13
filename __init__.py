@@ -18,6 +18,7 @@ from .presence import (
     avaliar_presenca,
     transicao_valida_para_disparo,
 )
+from .options import entidades_repetidas
 
 DOMAIN = 'maya_knox'
 SERVICOS = ("test_campainha", "test_alarme")
@@ -85,6 +86,17 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     ))
     if sensores:
         entry.async_on_unload(async_track_state_change_event(hass, sensores, _verificar_intrusao))
+
+    repetidas = entidades_repetidas(
+        sensores_perimetro, config_data.get('sensores_internos', [])
+    )
+    if repetidas:
+        # Config ambígua: a entidade é desligada em Casa e ligada em Rua ao mesmo tempo.
+        _LOGGER.warning(
+            "Maya Knox: entidades nas duas zonas (externa e interna): %s. "
+            "O comportamento fica indefinido — escolha uma zona para cada uma.",
+            ", ".join(repetidas),
+        )
 
     sensores_campainha = config_data.get('sensor_campainha', [])
     

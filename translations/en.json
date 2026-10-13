@@ -1,0 +1,171 @@
+{
+    "config": {
+        "step": {
+            "zonas": {
+                "title": "Maya Knox — Zones",
+                "description": "Sensors that trigger the alarm and the physical siren.",
+                "data": {
+                    "sensores_perimetro": "Outer zone (cameras / gates)",
+                    "sensores_internos": "Inner zone (presence)",
+                    "entidade_sirene_alarme": "Alarm siren",
+                    "entidade_chime_campainha": "Doorbell / chime"
+                },
+                "data_description": {
+                    "sensores_perimetro": "Trigger whenever the alarm is armed.",
+                    "sensores_internos": "Only trigger in Away mode — ignored while Home.",
+                    "entidade_sirene_alarme": "Turned on when the alarm triggers.",
+                    "entidade_chime_campainha": "Triggered together with the doorbell."
+                }
+            },
+            "campainha": {
+                "title": "Maya Knox — Doorbell",
+                "description": "Who to notify when someone rings the doorbell.",
+                "data": {
+                    "sensor_campainha": "Doorbell sensors",
+                    "notify_servicos_campainha": "Mobile notification",
+                    "alexa_notify_servicos_campainha": "Alexa (announcement)",
+                    "alexa_msg_campainha": "Alexa message",
+                    "alexa_campainha_som_id": "Alexa sound",
+                    "alexa_campainha_som_dispositivos": "Devices that play the sound"
+                },
+                "data_description": {
+                    "sensor_campainha": "Binary sensors only — the ring is detected by the 'on' state.",
+                    "notify_servicos_campainha": "notify.* services that receive the alert.",
+                    "alexa_msg_campainha": "Use {zona} for the name of the triggered sensor.",
+                    "alexa_campainha_som_id": "E.g. amzn_sfx_doorbell_01.",
+                    "alexa_campainha_som_dispositivos": "Echo that plays the sound in addition to the spoken announcement."
+                }
+            },
+            "notificacoes": {
+                "title": "Maya Knox — Alarm notifications",
+                "description": "Who to notify when the alarm triggers or changes state.",
+                "data": {
+                    "notify_servicos_sirene": "Mobile notification",
+                    "alexa_notify_servicos_alarme": "Alexa (announcement)",
+                    "alexa_msg_alarme": "Alexa message"
+                },
+                "data_description": {
+                    "notify_servicos_sirene": "Receives the trigger along with the camera image, when available.",
+                    "alexa_msg_alarme": "Use {msg} for the event text and {zona} for the sensor that triggered."
+                }
+            },
+            "automacao": {
+                "title": "Maya Knox — Automation",
+                "description": "Arm and disarm automatically from the residents' presence.",
+                "data": {
+                    "moradores": "Residents' phones",
+                    "rastreadores_omada": "Omada trackers",
+                    "ativar_auto_armar": "Arm automatically when leaving?",
+                    "atraso_auto_armar": "Wait before arming",
+                    "frigate_detect_ausente": "Detections to enable in Away mode",
+                    "sensores_pessoa_ausente": "Away mode person sensors"
+                },
+                "data_description": {
+                    "moradores": "Arms only when everyone is away.",
+                    "rastreadores_omada": "Added to the phones when computing presence.",
+                    "atraso_auto_armar": "When unsure, start with 2 minutes.",
+                    "frigate_detect_ausente": "Enabled when arming Away and disabled when back Home.",
+                    "sensores_pessoa_ausente": "Trigger the alarm only in Away mode."
+                }
+            }
+        },
+        "abort": {
+            "single_instance_allowed": "Maya Knox is already installed! To change the zones, click 'Configure' on the integration page."
+        }
+    },
+    "options": {
+        "step": {
+            "init": {
+                "title": "Maya Knox Configuration Panel",
+                "description": "Pick a section to edit. Changes apply immediately."
+            },
+            "zonas": {
+                "title": "Zones",
+                "description": "Sensors that trigger the alarm and the physical siren.",
+                "data": {
+                    "sensores_perimetro": "Outer zone (cameras / gates)",
+                    "sensores_internos": "Inner zone (presence)",
+                    "entidade_sirene_alarme": "Alarm siren",
+                    "entidade_chime_campainha": "Doorbell / chime"
+                },
+                "data_description": {
+                    "sensores_perimetro": "Trigger whenever the alarm is armed.",
+                    "sensores_internos": "Only trigger in Away mode — ignored while Home.",
+                    "entidade_sirene_alarme": "Turned on when the alarm triggers.",
+                    "entidade_chime_campainha": "Triggered together with the doorbell."
+                }
+            },
+            "campainha": {
+                "title": "Doorbell",
+                "description": "Who to notify when someone rings the doorbell.",
+                "data": {
+                    "sensor_campainha": "Doorbell sensors",
+                    "notify_servicos_campainha": "Mobile notification",
+                    "alexa_notify_servicos_campainha": "Alexa (announcement)",
+                    "alexa_msg_campainha": "Alexa message",
+                    "alexa_campainha_som_id": "Alexa sound",
+                    "alexa_campainha_som_dispositivos": "Devices that play the sound"
+                },
+                "data_description": {
+                    "sensor_campainha": "Binary sensors only — the ring is detected by the 'on' state.",
+                    "notify_servicos_campainha": "notify.* services that receive the alert.",
+                    "alexa_msg_campainha": "Use {zona} for the name of the triggered sensor.",
+                    "alexa_campainha_som_id": "E.g. amzn_sfx_doorbell_01.",
+                    "alexa_campainha_som_dispositivos": "Echo that plays the sound in addition to the spoken announcement."
+                }
+            },
+            "notificacoes": {
+                "title": "Alarm notifications",
+                "description": "Who to notify when the alarm triggers or changes state.",
+                "data": {
+                    "notify_servicos_sirene": "Mobile notification",
+                    "alexa_notify_servicos_alarme": "Alexa (announcement)",
+                    "alexa_msg_alarme": "Alexa message"
+                },
+                "data_description": {
+                    "notify_servicos_sirene": "Receives the trigger along with the camera image, when available.",
+                    "alexa_msg_alarme": "Use {msg} for the event text and {zona} for the sensor that triggered."
+                }
+            },
+            "automacao": {
+                "title": "Automation",
+                "description": "Arm and disarm automatically from the residents' presence.",
+                "data": {
+                    "moradores": "Residents' phones",
+                    "rastreadores_omada": "Omada trackers",
+                    "ativar_auto_armar": "Arm automatically when leaving?",
+                    "atraso_auto_armar": "Wait before arming",
+                    "frigate_detect_ausente": "Detections to enable in Away mode",
+                    "sensores_pessoa_ausente": "Away mode person sensors"
+                },
+                "data_description": {
+                    "moradores": "Arms only when everyone is away.",
+                    "rastreadores_omada": "Added to the phones when computing presence.",
+                    "atraso_auto_armar": "When unsure, start with 2 minutes.",
+                    "frigate_detect_ausente": "Enabled when arming Away and disabled when back Home.",
+                    "sensores_pessoa_ausente": "Trigger the alarm only in Away mode."
+                }
+            }
+        }
+    },
+    "services": {
+        "test_campainha": {
+            "name": "Test Doorbell",
+            "description": "Simulates a doorbell ring to test notifications and the physical chime."
+        },
+        "test_alarme": {
+            "name": "Test Alarm",
+            "description": "Simulates an alarm trigger to test notifications and the physical siren."
+        }
+    },
+    "entity": {
+        "button": {
+            "test_campainha": {
+                "name": "Test Doorbell"
+            },
+            "test_alarme": {
+                "name": "Test Alarm"
+            }
+        }
+    }
+}

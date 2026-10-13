@@ -55,8 +55,28 @@ class MayaKnoxAlarm(AlarmControlPanelEntity, RestoreEntity):
             self._auto_armado = bool(ultimo.attributes.get("auto_armado", False))
             self._sensor_disparo = ultimo.attributes.get("sensor_disparo")
             _LOGGER.info(f"Maya Knox: Estado restaurado após reinício: {ultimo.state}")
+            # O estado restaurado é só um rótulo: os efeitos (detecção das câmeras
+            # internas, switches do Frigate e sirene) precisam ser reaplicados, senão
+            # o painel mostra "ARMADO (RUA)" com a proteção interna desligada.
+            await self._reaplicar_efeitos_do_estado()
 
         self.hass.data.setdefault(DOMAIN, {})["painel"] = self
+
+    async def _reaplicar_efeitos_do_estado(self):
+        """Sincroniza sirene e sensores com self._attr_state após um reinício do HA."""
+        estado = self._attr_state
+        try:
+            if estado == AlarmControlPanelState.ARMED_AWAY:
+                await self._toggle_internal_cameras(True)
+            elif estado in (
+                AlarmControlPanelState.DISARMED,
+                AlarmControlPanelState.ARMED_HOME,
+            ):
+                await self._toggle_internal_cameras(False)
+            if estado == AlarmControlPanelState.TRIGGERED:
+                await self._controlar_sirene(True)
+        except Exception as e:  # nunca derrubar o setup da entidade por isso
+            _LOGGER.error(f"Maya Knox: Erro ao reaplicar efeitos do estado {estado}: {e}")
 
     async def async_will_remove_from_hass(self):
         if self.hass.data.get(DOMAIN, {}).get("painel") is self:

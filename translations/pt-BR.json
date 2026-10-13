@@ -1,29 +1,71 @@
 {
     "config": {
         "step": {
-            "user": {
-                "title": "Instalação do Maya Knox",
-                "description": "Defina as áreas de segurança iniciais.",
+            "zonas": {
+                "title": "Maya Knox — Zonas",
+                "description": "Sensores que disparam o alarme e a sirene física.",
                 "data": {
-                    "sensores_perimetro": "Zona Externa (Câmeras / Portões)",
-                    "sensores_internos": "Zona Interna (Sensores de Presença)",
-                    "sensor_campainha": "Sensores de Campainha (ex: Zona do Portão)",
-                    "entidade_sirene_alarme": "Sirene do Alarme (Entidade)",
-                    "entidade_chime_campainha": "Campainha / Chime (Entidade)",
-                    "moradores": "Celulares para Rastreador GPS",
-                    "rastreadores_omada": "Rastreadores Omada (Device Trackers)",
-                    "notify_servicos_campainha": "Notificação Mobile: Campainha",
-                    "notify_servicos_sirene": "Notificação Mobile: Alarme",
-                    "alexa_notify_servicos_campainha": "Alexa para Notificação: Campainha",
-                    "alexa_notify_servicos_alarme": "Alexa para Notificação: Alarme",
-                    "alexa_msg_campainha": "Mensagem Alexa (Campainha)",
-                    "alexa_msg_alarme": "Mensagem Alexa (Alarme)",
-                    "alexa_campainha_som_id": "ID do Som Alexa (Campainha)",
-                    "alexa_campainha_som_dispositivos": "Som de Campainha (Alexa Speak/Announce)",
-                    "ativar_auto_armar": "Armar sistema automaticamente ao sair?",
-                    "atraso_auto_armar": "Esperar quantos minutos com todos fora antes de armar",
-                    "frigate_detect_ausente": "Modo Ausente: ligar detecção Frigate (ex: switch.garagem_detect, switch.living_detect)",
-                    "sensores_pessoa_ausente": "Modo Ausente: sensores de pessoa que disparam o alarme (ex: binary_sensor.garagem_person_occupancy)"
+                    "sensores_perimetro": "Zona externa (câmeras / portões)",
+                    "sensores_internos": "Zona interna (presença)",
+                    "entidade_sirene_alarme": "Sirene do alarme",
+                    "entidade_chime_campainha": "Campainha / chime"
+                },
+                "data_description": {
+                    "sensores_perimetro": "Disparam sempre que o alarme está armado.",
+                    "sensores_internos": "Só disparam com o alarme em Rua — em Casa ficam ignorados.",
+                    "entidade_sirene_alarme": "Ligada quando o alarme dispara.",
+                    "entidade_chime_campainha": "Acionada junto com a campainha."
+                }
+            },
+            "campainha": {
+                "title": "Maya Knox — Campainha",
+                "description": "Quem avisar quando alguém tocar a campainha.",
+                "data": {
+                    "sensor_campainha": "Sensores de campainha",
+                    "notify_servicos_campainha": "Notificação mobile",
+                    "alexa_notify_servicos_campainha": "Alexa (anúncio)",
+                    "alexa_msg_campainha": "Mensagem da Alexa",
+                    "alexa_campainha_som_id": "Som da Alexa",
+                    "alexa_campainha_som_dispositivos": "Dispositivos que tocam o som"
+                },
+                "data_description": {
+                    "sensor_campainha": "Só sensores binários — o toque é detectado pelo estado 'ligado'.",
+                    "notify_servicos_campainha": "Serviços notify.* que recebem o aviso.",
+                    "alexa_msg_campainha": "Use {zona} para inserir o nome do sensor acionado.",
+                    "alexa_campainha_som_id": "Ex.: amzn_sfx_doorbell_01.",
+                    "alexa_campainha_som_dispositivos": "Echo que toca o som, além do anúncio falado."
+                }
+            },
+            "notificacoes": {
+                "title": "Maya Knox — Notificações do alarme",
+                "description": "Quem avisar quando o alarme dispara ou muda de estado.",
+                "data": {
+                    "notify_servicos_sirene": "Notificação mobile",
+                    "alexa_notify_servicos_alarme": "Alexa (anúncio)",
+                    "alexa_msg_alarme": "Mensagem da Alexa"
+                },
+                "data_description": {
+                    "notify_servicos_sirene": "Recebe o disparo com a imagem da câmera, quando houver.",
+                    "alexa_msg_alarme": "Use {msg} para o texto do evento e {zona} para o sensor que disparou."
+                }
+            },
+            "automacao": {
+                "title": "Maya Knox — Automação",
+                "description": "Armar e desarmar sozinho a partir da presença dos moradores.",
+                "data": {
+                    "moradores": "Celulares dos moradores",
+                    "rastreadores_omada": "Rastreadores Omada",
+                    "ativar_auto_armar": "Armar sozinho ao sair?",
+                    "atraso_auto_armar": "Espera antes de armar",
+                    "frigate_detect_ausente": "Detecções a ligar em Rua",
+                    "sensores_pessoa_ausente": "Sensores de pessoa do Modo Ausente"
+                },
+                "data_description": {
+                    "moradores": "Só arma quando todos estiverem fora.",
+                    "rastreadores_omada": "Somados aos celulares para calcular a presença.",
+                    "atraso_auto_armar": "Na dúvida, comece com 2 minutos.",
+                    "frigate_detect_ausente": "Ligadas ao armar em Rua e desligadas ao voltar para Casa.",
+                    "sensores_pessoa_ausente": "Disparam o alarme apenas em Rua."
                 }
             }
         },
@@ -35,27 +77,73 @@
         "step": {
             "init": {
                 "title": "Painel de Configuração Maya Knox",
-                "description": "Adicione ou remova sensores das zonas de alarme. O sistema será reiniciado automaticamente.",
+                "description": "Escolha uma seção para editar. As mudanças são aplicadas na hora."
+            },
+            "zonas": {
+                "title": "Zonas",
+                "description": "Sensores que disparam o alarme e a sirene física.",
                 "data": {
-                    "sensores_perimetro": "Zona Externa (Câmeras / Portões)",
-                    "sensores_internos": "Zona Interna (Sensores de Presença)",
-                    "sensor_campainha": "Sensores de Campainha (ex: Zona do Portão)",
-                    "entidade_sirene_alarme": "Sirene do Alarme (Entidade)",
-                    "entidade_chime_campainha": "Campainha / Chime (Entidade)",
-                    "moradores": "Celulares para Rastreador GPS",
-                    "rastreadores_omada": "Rastreadores Omada (Device Trackers)",
-                    "notify_servicos_campainha": "Notificação Mobile: Campainha",
-                    "notify_servicos_sirene": "Notificação Mobile: Alarme",
-                    "alexa_notify_servicos_campainha": "Alexa para Notificação: Campainha",
-                    "alexa_notify_servicos_alarme": "Alexa para Notificação: Alarme",
-                    "alexa_msg_campainha": "Mensagem Alexa (Campainha)",
-                    "alexa_msg_alarme": "Mensagem Alexa (Alarme)",
-                    "alexa_campainha_som_id": "ID do Som Alexa (Campainha)",
-                    "alexa_campainha_som_dispositivos": "Som de Campainha (Alexa Speak/Announce)",
-                    "ativar_auto_armar": "Armar sistema automaticamente ao sair?",
-                    "atraso_auto_armar": "Esperar quantos minutos com todos fora antes de armar",
-                    "frigate_detect_ausente": "Modo Ausente: ligar detecção Frigate (ex: switch.garagem_detect, switch.living_detect)",
-                    "sensores_pessoa_ausente": "Modo Ausente: sensores de pessoa que disparam o alarme (ex: binary_sensor.garagem_person_occupancy)"
+                    "sensores_perimetro": "Zona externa (câmeras / portões)",
+                    "sensores_internos": "Zona interna (presença)",
+                    "entidade_sirene_alarme": "Sirene do alarme",
+                    "entidade_chime_campainha": "Campainha / chime"
+                },
+                "data_description": {
+                    "sensores_perimetro": "Disparam sempre que o alarme está armado.",
+                    "sensores_internos": "Só disparam com o alarme em Rua — em Casa ficam ignorados.",
+                    "entidade_sirene_alarme": "Ligada quando o alarme dispara.",
+                    "entidade_chime_campainha": "Acionada junto com a campainha."
+                }
+            },
+            "campainha": {
+                "title": "Campainha",
+                "description": "Quem avisar quando alguém tocar a campainha.",
+                "data": {
+                    "sensor_campainha": "Sensores de campainha",
+                    "notify_servicos_campainha": "Notificação mobile",
+                    "alexa_notify_servicos_campainha": "Alexa (anúncio)",
+                    "alexa_msg_campainha": "Mensagem da Alexa",
+                    "alexa_campainha_som_id": "Som da Alexa",
+                    "alexa_campainha_som_dispositivos": "Dispositivos que tocam o som"
+                },
+                "data_description": {
+                    "sensor_campainha": "Só sensores binários — o toque é detectado pelo estado 'ligado'.",
+                    "notify_servicos_campainha": "Serviços notify.* que recebem o aviso.",
+                    "alexa_msg_campainha": "Use {zona} para inserir o nome do sensor acionado.",
+                    "alexa_campainha_som_id": "Ex.: amzn_sfx_doorbell_01.",
+                    "alexa_campainha_som_dispositivos": "Echo que toca o som, além do anúncio falado."
+                }
+            },
+            "notificacoes": {
+                "title": "Notificações do alarme",
+                "description": "Quem avisar quando o alarme dispara ou muda de estado.",
+                "data": {
+                    "notify_servicos_sirene": "Notificação mobile",
+                    "alexa_notify_servicos_alarme": "Alexa (anúncio)",
+                    "alexa_msg_alarme": "Mensagem da Alexa"
+                },
+                "data_description": {
+                    "notify_servicos_sirene": "Recebe o disparo com a imagem da câmera, quando houver.",
+                    "alexa_msg_alarme": "Use {msg} para o texto do evento e {zona} para o sensor que disparou."
+                }
+            },
+            "automacao": {
+                "title": "Automação",
+                "description": "Armar e desarmar sozinho a partir da presença dos moradores.",
+                "data": {
+                    "moradores": "Celulares dos moradores",
+                    "rastreadores_omada": "Rastreadores Omada",
+                    "ativar_auto_armar": "Armar sozinho ao sair?",
+                    "atraso_auto_armar": "Espera antes de armar",
+                    "frigate_detect_ausente": "Detecções a ligar em Rua",
+                    "sensores_pessoa_ausente": "Sensores de pessoa do Modo Ausente"
+                },
+                "data_description": {
+                    "moradores": "Só arma quando todos estiverem fora.",
+                    "rastreadores_omada": "Somados aos celulares para calcular a presença.",
+                    "atraso_auto_armar": "Na dúvida, comece com 2 minutos.",
+                    "frigate_detect_ausente": "Ligadas ao armar em Rua e desligadas ao voltar para Casa.",
+                    "sensores_pessoa_ausente": "Disparam o alarme apenas em Rua."
                 }
             }
         }

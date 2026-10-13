@@ -11,8 +11,15 @@
 *   **Gestão de Câmeras Internas**: Ativa automaticamente a detecção de movimento das câmeras internas apenas no modo **Armado (Rua)**, protegendo sua privacidade enquanto você está em casa.
 *   **Configuração via UI**: Todo o setup é feito através da interface nativa do Home Assistant (Config Flow), sem necessidade de editar arquivos YAML.
 *   **Monitoramento Inteligente**: Permite definir sensores de perímetro (externos) e sensores internos (incluindo câmeras).
-*   **Cartão Lovelace Premium (v1.1.8)**: Inclui um cartão frontend animado com links sociais clicáveis, log de eventos e feedback visual pulsante.
-*   **Anti-Cache Robusto**: Utiliza embedding Base64 para garantir que a imagem correta do ícone seja exibida, sem conflitos de cache do navegador.
+*   **Cartão Lovelace Premium (v1.3.0)**: cartão frontend com log de eventos, feedback de estado, confirmação de desarme em dois toques e links sociais clicáveis.
+*   **Anti-Cache Robusto**: versão única usada no logo e no cache-bust, com imagem embutida em Base64 para evitar conflito de cache do navegador.
+
+## 🧪 Testes
+
+```bash
+python -m pytest tests -q      # regras de presença, normalização do options flow
+node tests/test_card_logic.mjs # lógica do card (escape de HTML, mapeamento de estados)
+```
 
 ## 📦 Instalação
 
@@ -34,11 +41,11 @@
 1. No Home Assistant, vá para **Configurações** > **Dispositivos e Serviços**.
 2. Clique em **Adicionar Integração**.
 3. Pesquise por **Maya Knox**.
-4. Siga as instruções:
-    *   **Sensores de Perímetro**: Portas/janelas e câmeras externas.
-    *   **Sensores Internos**: Sensores de movimento e câmeras internas.
-    *   **Automação Alexa**: Defina as frases e dispositivos para anúncios automáticos.
-    *   **Armar Automático**: Sistema inteligente baseado na presença dos moradores (GPS).
+4. O formulário é dividido em 4 passos: **Zonas**, **Campainha**, **Notificações** e **Automação**. Para alterar depois, use o botão **Configurar** e escolha a seção.
+    *   **Zonas**: sensores de perímetro e internos, sirene e chime.
+    *   **Campainha**: sensores de campainha e avisos (mobile + Alexa).
+    *   **Notificações**: o que avisar quando o alarme dispara.
+    *   **Automação**: moradores, rastreadores e Modo Ausente.
 
 ## 🚪 Saída de casa e Modo Ausente (v1.2.0)
 
