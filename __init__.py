@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 import logging
 import os
 from homeassistant.config_entries import ConfigEntry
@@ -26,6 +27,35 @@ PLATFORMS = [Platform.ALARM_CONTROL_PANEL, Platform.BUTTON]
 
 _LOGGER = logging.getLogger(__name__)
 
+CARD_PATH = '/maya_knox_www/maya-knox-card.js'
+
+
+def _versao_para_cache() -> str:
+    """Versão usada como query string no card.
+
+    Sem isso o navegador guarda o módulo antigo por ETag/Last-Modified e serve
+    304 após uma atualização, deixando o painel com o card velho em cache
+    até um hard reload. Lê o manifest (mesma fonte que o HACS mostra).
+    """
+    try:
+        caminho = os.path.join(os.path.dirname(__file__), 'manifest.json')
+        with open(caminho, encoding='utf-8') as f:
+            dados = json.load(f)
+        versao = str(dados.get('version') or '').strip()
+        if versao:
+            return versao
+    except Exception as e:
+        _LOGGER.warning(f'Maya Knox: não consegui ler a versão do manifest: {e}')
+    # Fallback: mtime do próprio card, muda a cada atualização de arquivo.
+    try:
+        return str(int(os.path.getmtime(os.path.join(os.path.dirname(__file__), 'www', 'maya-knox-card.js'))))
+    except OSError:
+        return '0'
+
+
+def _card_url_com_versao() -> str:
+    return f'{CARD_PATH}?v={_versao_para_cache()}'
+
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     '''Set up the Maya Knox component.'''
     hass.data.setdefault(DOMAIN, {})
@@ -50,7 +80,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
                     StaticPathConfig(url_path='/maya_knox_static', path=brand_path, cache_headers=False),
                 ]
             )
-            add_extra_js_url(hass, '/maya_knox_www/maya-knox-card.js')
+            add_extra_js_url(hass, _card_url_com_versao())
             hass.data[DOMAIN]['static_registrado'] = True
         except Exception as e:
             _LOGGER.error(f'Maya Knox: Erro ao registrar recursos frontend: {e}')
